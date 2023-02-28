@@ -6,4 +6,12 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Remove="2021styles.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="2021styles.json" />
+  </ItemGroup>
+
 </Project>
