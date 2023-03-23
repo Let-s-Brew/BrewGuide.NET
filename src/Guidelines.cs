@@ -1,4 +1,4 @@
-﻿namespace BrewGuide.NET;
+﻿namespace BrewGuide;
 
 public interface IGuidelines
 {

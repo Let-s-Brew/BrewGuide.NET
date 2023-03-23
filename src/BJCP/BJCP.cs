@@ -1,21 +1,27 @@
-﻿using BrewGuide.NET;
+﻿using BrewGuide;
 using System.Text.Json;
 using System.IO;
 using System.Reflection;
 
-namespace BrewGuide.NET.BJCP;
+namespace BrewGuide.BJCP;
 
-public static class BJCP
+public static class BJCPGuidelines
 {
     public static readonly BJCP21Guidelines BJCP2021Guidelines = LoadFromJSON();
 
     private static BJCP21Guidelines LoadFromJSON()
     {
         var guildlines = new BJCP21Guidelines();
-    using (JsonDocument doc = JsonDocument.Parse(Assembly.GetExecutingAssembly().GetManifestResourceStream("2021styles.json")))
-    {
+        using (JsonDocument doc = JsonDocument.Parse(Assembly.GetAssembly(typeof(BJCPGuidelines)).GetManifestResourceStream($"{Assembly.GetAssembly(typeof(BJCPGuidelines)).GetName().Name}.2021styles.json")))
+        {
+            
+            if(doc == null)
+            {
+                Console.WriteLine("Error loading BJCP Styles json file.");
+                return null;
+            }
 
-        foreach( JsonElement style in doc.RootElement.EnumerateArray() ) {
+            foreach( JsonElement style in doc.RootElement.EnumerateArray() ) {
                 //Check if we have the category already
                 var catId = style.GetProperty("categorynumber").GetString();
                 IStyleCategory category;
@@ -27,44 +33,18 @@ public static class BJCP
                     category = new BJCPStyleCategory(catId, style.GetProperty("category").GetString());
                     guildlines.StyleCategories[catId] = category;
                 }
-                var bjcpStyle = new BJCPStyle() { 
-                    Id = style.GetProperty("number").GetString(),
-                    Name = style.GetProperty("name").GetString(),
-                    OverallImpression = style.GetProperty("overallimpression").GetString(),
-                    Aroma = style.GetProperty("aroma").GetString(),
-                    Appearance = style.GetProperty("appearance").GetString(),
-                    Flavor = style.GetProperty("flavor").GetString(),
-                    Mouthfeel = style.GetProperty("mouthfeel").GetString(),
-                    Comments = style.GetProperty("comments").GetString(),
-                    History = style.GetProperty("history").GetString(),
-                    CharacteristicIngredients = style.GetProperty("characteristicingredients").GetString(),
-                    StyleComparison = style.GetProperty("stylecomparison").GetString(),
-                    CommercialExamples = style.GetProperty("commercialexamples").GetString(),
-                    Tags = style.GetProperty("").GetString().Split(", ").ToList(),
-                    Stats = new VitalStats()
-                    {
-                        IBUHigh = int.Parse(style.GetProperty("ibumax").GetString()),
-                        IBULow = int.Parse(style.GetProperty("ibumin").GetString()),
-                        OGHigh = float.Parse(style.GetProperty("ogmax").GetString()),
-                        OGLow = float.Parse(style.GetProperty("ogmin").GetString()),
-                        FGHigh = float.Parse(style.GetProperty("fgmax").GetString()),
-                        FGLow = float.Parse(style.GetProperty("fgmin").GetString()),
-                        ABVHigh = float.Parse(style.GetProperty("abvmax").GetString()),
-                        ABVLow = float.Parse(style.GetProperty("abvmin").GetString()),
-                        SRMHigh = int.Parse(style.GetProperty("srmmax").GetString()),
-                        SRMLow = int.Parse(style.GetProperty("srmmin").GetString())
-                    }
-                };
+
+                var bjcpStyle = new BJCPStyle(style, category);
                 category.Styles.Add(bjcpStyle.Id, bjcpStyle);
             }
-    }
+        }
         return guildlines;
     }
 }
 public class BJCP21Guidelines : IGuidelines
 {
-    public string Name => "BJCP 2021 Style Guidelines";
-    public string Description => "The 2021 BJCP Style Guidelines are a minor revision to the 2015 edition, itself a major update of the 2008 edition. The goals of the 2015 edition were to better address world beer styles as found in their local markets, keep pace with emerging craft beer market trends, describe historical beers now finding a following, better describe the sensory characteristics of modern brewing ingredients, take advantage of new research and references, and help competition organizers better manage the complexity of their events. These goals have not changed in the 2021 edition.";
+    public string Name => "BJCP 2021 Style BJCPGuidelines";
+    public string Description => "The 2021 BJCP Style BJCPGuidelines are a minor revision to the 2015 edition, itself a major update of the 2008 edition. The goals of the 2015 edition were to better address world beer styles as found in their local markets, keep pace with emerging craft beer market trends, describe historical beers now finding a following, better describe the sensory characteristics of modern brewing ingredients, take advantage of new research and references, and help competition organizers better manage the complexity of their events. These goals have not changed in the 2021 edition.";
 
     public Dictionary<string, IStyleCategory> StyleCategories { get; } = new();
 }
@@ -88,6 +68,47 @@ public class BJCPStyleCategory : IStyleCategory
 
 public record BJCPStyle : IStyle
 {
+    public BJCPStyle(JsonElement json, IStyleCategory category)
+    {
+        if (!json.TryGetProperty("number", out var id))
+        {
+            throw new ArgumentNullException("Id", "Unable to locate Id from Style JSON (key: \"number\")");
+        }
+        Id = id.GetString();
+        if (!json.TryGetProperty("name", out var name))
+        {
+            throw new ArgumentNullException("Name", "Unable to locate Name from Style JSON (key: \"name\")");
+        }
+        Name = name.GetString();
+
+        Category = category;
+        OverallImpression = json.TryGetProperty("overallimpression", out var impression) ? impression.GetString() : String.Empty;
+        Aroma = json.TryGetProperty("armoa", out var armoa) ? armoa.GetString() : String.Empty;
+        Appearance = json.TryGetProperty("appearance", out var app) ? app.GetString() : String.Empty;
+        Flavor = json.TryGetProperty("flavor", out var flavor) ? flavor.GetString() : String.Empty;
+        Mouthfeel = json.TryGetProperty("mouthfeel", out var mouth) ? mouth.GetString() : String.Empty;
+        Comments = json.TryGetProperty("comments", out var comm) ? comm.GetString() : String.Empty;
+        History = json.TryGetProperty("history", out var hist) ? hist.GetString() : String.Empty;
+        CharacteristicIngredients = json.TryGetProperty("characteristicingredients", out var ci) ? ci.GetString() : String.Empty;
+        StyleComparison = json.TryGetProperty("stylecomparison", out var sc) ? sc.GetString() : String.Empty;
+        CommercialExamples = json.TryGetProperty("commercialexamples", out var ce) ? ce.GetString() : String.Empty;
+        Tags = json.TryGetProperty("tags",out var tags) ? tags.GetString().Split(", ").ToList() : new List<string>();
+        Stats = new VitalStats()
+        {
+            IBULow = json.TryGetProperty("ibumin", out var ibumin) ? int.Parse(ibumin.GetString()) : 0,
+            IBUHigh = json.TryGetProperty("ibumax", out var ibumax) ? int.Parse(ibumax.GetString()) : 0,
+            OGLow = json.TryGetProperty("ogmin", out var ogmin) ? float.Parse(ogmin.GetString()) : 0,
+            OGHigh = json.TryGetProperty("ogmax", out var ogmax) ? float.Parse(ogmax.GetString()) : 0,
+            FGLow = json.TryGetProperty("fgmin", out var fgmin) ? float.Parse(fgmin.GetString()) : 0,
+            FGHigh = json.TryGetProperty("fgmax", out var fgmax) ? float.Parse(fgmax.GetString()) : 0,
+            ABVLow = json.TryGetProperty("abvmin", out var abvmin) ? float.Parse(abvmin.GetString()) : 0,
+            ABVHigh = json.TryGetProperty("abvmax", out var abvmax) ? float.Parse(abvmax.GetString()) : 0,
+            SRMLow = json.TryGetProperty("srmmin", out var srmmin) ? float.Parse(srmmin.GetString()) : 0,
+            SRMHigh = json.TryGetProperty("srmmax", out var srmmax) ? float.Parse(srmmax.GetString()) : 0
+        };
+        
+    }
+
     public string Id { get; init; }
     public string Name { get; init; }
     public IStyleCategory Category { get; init; }
@@ -102,6 +123,7 @@ public record BJCPStyle : IStyle
     public string StyleComparison { get; init; }
     public VitalStats Stats { get; init; }
     public string CommercialExamples { get; init; }
+    public string EntryInstructions { get; init; }
     public List<string> Tags { get; init; }
 
 }
@@ -109,8 +131,8 @@ public record BJCPStyle : IStyle
 public readonly record struct VitalStats (
     int IBULow,
     int IBUHigh,
-    int SRMLow,
-    int SRMHigh,
+    float SRMLow,
+    float SRMHigh,
     float OGLow,
     float OGHigh,
     float FGLow,
