@@ -9,3 +9,8 @@ Currently only the 2021 BJCP Style Guidelines are built in, and are accessible v
 Which is a `BrewCode.BrewGuide.BJCP.BJCPGuideLines` object, implementing the `BrewCode.BrewGuide.IGuidelines` Interface.
 
 You may utilize the `IGuidelines`, `IStyleCategory`, and/or `IStyle` interfaces within your own project to reference any style guidelines. 
+
+### TODO
+* Implement GABF Guidelines
+* Implement 2015 BJCP Guidelines (incl Mead/Ciders)
+* Publish to NuGet main registry?
