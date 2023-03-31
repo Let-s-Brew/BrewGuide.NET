@@ -1,18 +1,21 @@
-﻿using BrewGuide;
-using System.Text.Json;
-using System.IO;
+﻿using System.Text.Json;
 using System.Reflection;
 
-namespace BrewGuide.BJCP;
+namespace BrewCode.BrewGuide.BJCP;
 
-public static class BJCPGuidelines
+public static class Guidelines
 {
-    public static readonly BJCP21Guidelines BJCP2021Guidelines = LoadFromJSON();
+    public static readonly BJCPGuidelines BJCP2021Guidelines = LoadFromJSON();
 
-    private static BJCP21Guidelines LoadFromJSON()
+    private static BJCPGuidelines LoadFromJSON()
     {
-        var guildlines = new BJCP21Guidelines();
-        using (JsonDocument doc = JsonDocument.Parse(Assembly.GetAssembly(typeof(BJCPGuidelines)).GetManifestResourceStream($"{Assembly.GetAssembly(typeof(BJCPGuidelines)).GetName().Name}.2021styles.json")))
+        var guildlines = new BJCPGuidelines
+        {
+            Name = "BJCP 2021 Guidelines",
+            Description = "The 2021 BJCP Style BJCPGuidelines are a minor revision to the 2015 edition, itself a major update of the 2008 edition. The goals of the 2015 edition were to better address world beer styles as found in their local markets, keep pace with emerging craft beer market trends, describe historical beers now finding a following, better describe the sensory characteristics of modern brewing ingredients, take advantage of new research and references, and help competition organizers better manage the complexity of their events. These goals have not changed in the 2021 edition."
+        };
+
+        using (JsonDocument doc = JsonDocument.Parse(Assembly.GetAssembly(typeof(Guidelines)).GetManifestResourceStream($"{Assembly.GetAssembly(typeof(Guidelines)).GetName().Name}.2021styles.json")))
         {
             
             if(doc == null)
@@ -41,12 +44,11 @@ public static class BJCPGuidelines
         return guildlines;
     }
 }
-public class BJCP21Guidelines : IGuidelines
+public class BJCPGuidelines : IGuidelines
 {
-    public string Name => "BJCP 2021 Style BJCPGuidelines";
-    public string Description => "The 2021 BJCP Style BJCPGuidelines are a minor revision to the 2015 edition, itself a major update of the 2008 edition. The goals of the 2015 edition were to better address world beer styles as found in their local markets, keep pace with emerging craft beer market trends, describe historical beers now finding a following, better describe the sensory characteristics of modern brewing ingredients, take advantage of new research and references, and help competition organizers better manage the complexity of their events. These goals have not changed in the 2021 edition.";
-
     public Dictionary<string, IStyleCategory> StyleCategories { get; } = new();
+    public string Name { get; init; } = string.Empty;
+    public string Description {get; init; } = string.Empty;
 }
 
 public class BJCPStyleCategory : IStyleCategory
