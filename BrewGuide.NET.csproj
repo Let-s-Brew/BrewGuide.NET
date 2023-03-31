@@ -4,6 +4,11 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	<PackageDescription>Simple NuGet Library for Brewing Style Guidlines used in Homebrewing</PackageDescription>
+	<RepositoryType>git</RepositoryType>
+	<RepositoryUrl>https://github.com/Let-s-Brew/BrewGuide.NET</RepositoryUrl>
+	<PackageId>BrewCode.BrewGuide</PackageId>
+	<Version>1.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
