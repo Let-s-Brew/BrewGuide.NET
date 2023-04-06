@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace BrewCode.BrewGuide.BJCP;
 
@@ -27,7 +28,7 @@ public static class Guidelines
             foreach( JsonElement style in doc.RootElement.EnumerateArray() ) {
                 //Check if we have the category already
                 var catId = style.GetProperty("categorynumber").GetString();
-                IStyleCategory category;
+                BJCPStyleCategory category;
                 if( guildlines.StyleCategories.ContainsKey(catId) ) 
                 { 
                     category = guildlines.StyleCategories[catId];
@@ -44,14 +45,42 @@ public static class Guidelines
         return guildlines;
     }
 }
-public class BJCPGuidelines : IGuidelines
+public class BJCPGuidelines : IGuidelines<BJCPStyleCategory, BJCPStyle>
 {
-    public Dictionary<string, IStyleCategory> StyleCategories { get; } = new();
+    public Dictionary<string, BJCPStyleCategory> StyleCategories { get; } = new();
     public string Name { get; init; } = string.Empty;
     public string Description {get; init; } = string.Empty;
+
+    public BJCPStyle? GetStyleById(string id)
+    {
+        //first try to find numerically i.e. (Style 10A = Cat 10, style ID 10A)
+        Regex rx = new Regex(@"^(\d+){1}\w?", RegexOptions.IgnoreCase);
+
+        if(rx.IsMatch(id))
+        {
+            var catId = rx.Match(id).Groups[0].Value;
+            if(StyleCategories.ContainsKey(catId))
+            {
+                if(StyleCategories.TryGetValue(catId, out var cat))
+                {
+                    if (cat.Styles.TryGetValue(id, out var style)) return style;
+                }
+            }
+        }
+
+        // Search the long way
+        foreach(var cat in StyleCategories.Values)
+        {
+            if(cat.Styles.ContainsKey(id))
+            {
+                return cat.Styles[id];
+            }
+        }
+        return null;
+    }
 }
 
-public class BJCPStyleCategory : IStyleCategory
+public class BJCPStyleCategory : IStyleCategory<BJCPStyle>
 {
     public string Id { get; init; }
 
@@ -59,7 +88,7 @@ public class BJCPStyleCategory : IStyleCategory
 
     public string Description { get; init; }
 
-    public Dictionary<string, IStyle> Styles => new();
+    public Dictionary<string, BJCPStyle> Styles => new();
 
     public BJCPStyleCategory(string id, string name, string description = "") {
         Id = id;
@@ -70,7 +99,7 @@ public class BJCPStyleCategory : IStyleCategory
 
 public record BJCPStyle : IStyle
 {
-    public BJCPStyle(JsonElement json, IStyleCategory category)
+    public BJCPStyle(JsonElement json, BJCPStyleCategory category)
     {
         if (!json.TryGetProperty("number", out var id))
         {
@@ -113,7 +142,7 @@ public record BJCPStyle : IStyle
 
     public string Id { get; init; }
     public string Name { get; init; }
-    public IStyleCategory Category { get; init; }
+    public BJCPStyleCategory Category { get; init; }
     public string OverallImpression { get; init; }
     public string Aroma { get; init; }
     public string Appearance { get; init; }
