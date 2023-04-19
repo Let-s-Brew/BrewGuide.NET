@@ -8,6 +8,10 @@ public static class Guidelines
 {
     public static readonly BJCPGuidelines BJCP2021Guidelines = LoadFromJSON();
 
+    public static BJCPStyle? StyleFromString(string styleId)
+    {
+        return BJCP2021Guidelines.GetStyleById(styleId);
+    }
     private static BJCPGuidelines LoadFromJSON()
     {
         var guildlines = new BJCPGuidelines
